@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cocolo Travel — JR Ticket Order Form</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --navy: #1a2744;
+    --navy-light: #243357;
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --cream: #faf8f3;
+    --border: #ddd8cc;
+    --text: #2a2a2a;
+    --muted: #888;
+    --red: #c0392b;
+    --warn-bg: #fff8e6;
+    --warn-border: #f0c060;
+    --warn-text: #7a5000;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
+
+  /* ── Header ── */
+  .header {
+    background: var(--navy); padding: 1.1rem 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 3px solid var(--gold);
+  }
+  .header-brand { display: flex; align-items: center; gap: 0.75rem; }
+  .header-logo {
+    width: 36px; height: 36px; background: var(--gold); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 700; color: var(--navy);
+  }
+  .header-title { color: white; font-size: 1rem; font-weight: 500; }
+  .header-sub { color: var(--gold-light); font-size: 0.72rem; margin-top: 1px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .header-right { display: flex; align-items: center; gap: 0.75rem; }
+  .session-badge {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 20px; padding: 0.25rem 0.75rem;
+    font-size: 0.75rem; color: rgba(255,255,255,0.8);
+  }
+  .btn-clear-session {
+    background: none; border: 1px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.6);
+    border-radius: 6px; padding: 0.3rem 0.75rem; font-size: 0.75rem; cursor: pointer;
+    font-family: inherit; transition: all 0.15s;
+  }
+  .btn-clear-session:hover { border-color: #ff6b6b; color: #ff9999; }
+
+  /* ── Layout ── */
+  .main { display: grid; grid-template-columns: 400px 1fr; min-height: calc(100vh - 65px); }
+
+  /* ── Left panel ── */
+  .panel {
+    background: white; border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    max-height: calc(100vh - 65px); position: sticky; top: 0; overflow: hidden;
+  }
+
+  /* ── Customer tabs ── */
+  .customer-tabs {
+    border-bottom: 2px solid var(--border); background: #f5f5f5;
+    padding: 0.5rem 0.75rem 0; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 2px;
+    flex-shrink: 0;
+  }
+  .customer-tab {
+    padding: 0.35rem 0.8rem; font-size: 0.76rem; cursor: pointer;
+    border: 1px solid transparent; border-bottom: none; border-radius: 6px 6px 0 0;
+    background: none; font-family: inherit; color: var(--muted);
+    transition: all 0.15s; white-space: nowrap;
+    max-width: 130px; overflow: hidden; text-overflow: ellipsis;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .customer-tab:hover { background: white; color: var(--text); }
+  .customer-tab.active {
+    background: white; color: var(--navy); font-weight: 600;
+    border-color: var(--border); border-bottom-color: white;
+    margin-bottom: -2px; padding-bottom: 0.5rem;
+  }
+  .warn-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warn-border); flex-shrink: 0; display: inline-block; }
+  .tab-add {
+    padding: 0.35rem 0.65rem; font-size: 1rem; cursor: pointer;
+    background: none; border: 1px dashed var(--border); border-bottom: none;
+    border-radius: 6px 6px 0 0; color: var(--muted); font-family: inherit;
+    transition: all 0.15s;
+  }
+  .tab-add:hover { color: var(--navy); border-color: var(--gold); background: #fffbf0; }
+
+  /* ── Panel body ── */
+  .panel-body { padding: 1.25rem 1.5rem; flex: 1; overflow-y: auto; min-height: 0; }
+  .panel-section { margin-bottom: 1.3rem; }
+  .panel-label {
+    font-size: 0.67rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 0.6rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border);
+  }
+
+  /* ── Fields ── */
+  .field { margin-bottom: 0.8rem; }
+  .field label { display: block; font-size: 0.77rem; font-weight: 500; margin-bottom: 0.28rem; color: var(--navy); }
+  .field input {
+    width: 100%; padding: 0.48rem 0.75rem;
+    border: 1px solid var(--border); border-radius: 7px;
+    font-size: 0.85rem; font-family: inherit; background: var(--cream); transition: border-color 0.15s;
+  }
+  .field input:focus { outline: none; border-color: var(--gold); background: white; }
+
+  /* ── Paste area ── */
+  .paste-area {
+    width: 100%; padding: 0.55rem 0.75rem; border: 1px solid var(--border); border-radius: 7px;
+    font-size: 0.73rem; font-family: 'DM Mono', monospace;
+    resize: vertical; min-height: 85px; background: var(--cream); transition: border-color 0.15s;
+  }
+  .paste-area:focus { outline: none; border-color: var(--gold); background: white; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+    padding: 0.48rem 0.95rem; border: none; border-radius: 7px;
+    font-family: inherit; font-size: 0.82rem; font-weight: 500; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-primary { background: var(--navy); color: white; }
+  .btn-primary:hover { background: var(--navy-light); }
+  .btn-gold { background: var(--gold); color: var(--navy); font-weight: 600; }
+  .btn-gold:hover { background: var(--gold-light); }
+  .btn-sm { padding: 0.32rem 0.7rem; font-size: 0.75rem; }
+  .btn-ghost { background: #f0f0f0; color: var(--text); border: none; }
+  .btn-ghost:hover { background: #e4e4e4; }
+  .btn-outline-red { background: none; border: 1px solid #e0a0a0; color: var(--red); }
+  .btn-outline-red:hover { background: #fce8e6; }
+
+  /* ── Train cards ── */
+  .train-list { display: flex; flex-direction: column; gap: 0.4rem; }
+  .train-card {
+    background: var(--cream); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.5rem 0.65rem;
+    font-size: 0.77rem; display: flex; align-items: center; gap: 6px;
+  }
+  .train-card.has-warning { border-color: var(--warn-border); background: var(--warn-bg); }
+  .train-card .route { font-weight: 600; color: var(--navy); }
+  .train-card .t-date { color: var(--muted); font-size: 0.71rem; }
+  .train-card .t-times { color: var(--gold); font-family: 'DM Mono', monospace; font-size: 0.71rem; }
+  .train-card .warn-label { font-size: 0.69rem; color: var(--warn-text); margin-top: 2px; }
+
+  /* ── Status ── */
+  .status { display: none; padding: 0.5rem 0.85rem; border-radius: 7px; font-size: 0.79rem; margin-bottom: 0.7rem; }
+  .status.ok   { display: block; background: #e6f9ee; border: 1px solid #a3d9b5; color: #1a6b3a; }
+  .status.err  { display: block; background: #fce8e6; border: 1px solid #f0a09a; color: #7a1f1a; }
+  .status.warn { display: block; background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text); }
+
+  /* ── Format hint ── */
+  .format-box {
+    background: #f0f4ff; border: 1px solid #c5d0f0; border-radius: 8px;
+    padding: 0.7rem 0.9rem; font-size: 0.74rem; line-height: 1.6; color: #3a4a7a;
+    margin-bottom: 1.2rem;
+  }
+  .format-box code { font-family: 'DM Mono', monospace; background: #dde5ff; padding: 0 3px; border-radius: 3px; font-size: 0.7rem; }
+  .format-example {
+    margin-top: 0.45rem; font-family: 'DM Mono', monospace; font-size: 0.67rem;
+    background: white; border: 1px solid #c5d0f0; border-radius: 5px;
+    padding: 0.35rem 0.6rem; line-height: 1.8; color: #2a3a6a;
+  }
+
+  /* ── Download all ── */
+  .download-section {
+    flex-shrink: 0; padding: 1rem 1.5rem;
+    border-top: 2px solid var(--border); background: #f8f8f8;
+  }
+  .download-section .panel-label { margin-bottom: 0.5rem; }
+  .dl-list { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.65rem; max-height: 140px; overflow-y: auto; }
+  .dl-row {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.76rem; padding: 0.3rem 0.55rem;
+    background: white; border: 1px solid var(--border); border-radius: 6px;
+  }
+  .dl-row .dl-name { flex: 1; font-weight: 500; color: var(--navy); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dl-row .dl-legs { color: var(--muted); font-size: 0.7rem; white-space: nowrap; }
+  .dl-row .dl-warn { color: var(--warn-text); font-size: 0.7rem; }
+
+  /* ── Right panel ── */
+  .preview-panel {
+    padding: 2rem; overflow-y: auto; background: #e8e4dc;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .preview-header {
+    display: flex; gap: 0.75rem; margin-bottom: 1.5rem;
+    width: 100%; max-width: 780px; justify-content: space-between; align-items: center;
+  }
+  .preview-customer-label { font-size: 0.85rem; color: var(--navy); font-weight: 600; }
+
+  /* ── Form ── */
+  #formPreview {
+    background: white; width: 780px; padding: 22px 24px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.15); border-radius: 4px;
+    font-family: 'MS PGothic','ＭＳ Ｐゴシック','Hiragino Kaku Gothic Pro',Meiryo,Arial,sans-serif;
+  }
+  .meta-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .meta-table td { border: 1px solid #000; padding: 4px 6px; }
+  .meta-table .lbl { font-weight: normal; white-space: nowrap; }
+  .meta-table .val { min-width: 200px; }
+  .form-title {
+    text-align: center; font-size: 16px; font-weight: bold; padding: 6px 5px;
+    background: #d0d0d0; border: 2px solid #000; border-top: none; letter-spacing: .05em;
+  }
+  .col-table { width: 100%; border-collapse: collapse; font-size: 11px; border: 2px solid #000; }
+  .col-table th, .col-table td { border: 1px solid #bbb; }
+  .col-table thead th { text-align: center; padding: 5px 4px; font-weight: bold; font-size: 13px; background: #d0d0d0; border: 1px solid #999; }
+  .col-table thead th.sub { font-weight: normal; background: #e8e8e8; font-size: 11px; padding: 4px; }
+  .footer-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .footer-table td { border: 1px solid #000; padding: 4px 6px; }
+  .footer-table .lbl { white-space: nowrap; width: 140px; }
+  .empty-state { color: var(--muted); text-align: center; padding: 3rem 2rem; font-size: 0.85rem; }
+
+  @media print { .header, .main > .panel, .preview-header { display: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-brand">
+    <div class="header-logo">CT</div>
+    <div>
+      <div class="header-title">JR Ticket Order Form Generator</div>
+      <div class="header-sub">Cocolo Travel 合同会社</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="session-badge" id="sessionBadge">0 customers</span>
+    <button class="btn-clear-session" onclick="clearSession()">✕ Clear session</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- LEFT PANEL -->
+  <div class="panel">
+    <div class="customer-tabs" id="customerTabs"></div>
+
+    <div class="panel-body">
+
+      <div class="panel-section">
+        <div class="panel-label">Customer Info</div>
+        <div class="field">
+          <label>Customer Name (お客様名義)</label>
+          <input type="text" id="customerName" placeholder="e.g. MARTIN Jean-Pierre" oninput="onNameChange()">
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-label">Train Data — paste from system</div>
+        <textarea class="paste-area" id="pasteInput" rows="6"
+          placeholder="Jour 6 2026-05-09 Depart de Shinjuku à 09:30 Arrivée à 11:28 à Kawaguchiko
+Jour 7 2026-05-10 Depart de Kawaguchiko à 08:23 Arrivée à 09:10 à Otsuki
+..."></textarea>
+        <div style="margin-top:0.5rem;display:flex;gap:0.4rem;">
+          <button class="btn btn-primary btn-sm" onclick="parseInput()">▶ Parse trains</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearCurrentCustomer()">Clear</button>
+        </div>
+      </div>
+
+      <div class="format-box">
+        Each line: <code>Jour N YYYY-MM-DD Depart de [Station] à HH:MM Arrivée à HH:MM à [Station]</code>
+        <div class="format-example">Jour 6 2026-05-09 Depart de Shinjuku à 09:30 Arrivée à 11:28 à Kawaguchiko</div>
+      </div>
+
+      <div class="status" id="status"></div>
+
+      <div id="trainListSection" style="display:none;">
+        <div class="panel-label">
+          Parsed Trains <span id="trainCount" style="color:var(--gold);font-weight:600;"></span>
+        </div>
+        <div class="train-list" id="trainList"></div>
+      </div>
+
+    </div><!-- /panel-body -->
+
+    <!-- Download section -->
+    <div class="download-section">
+      <div class="panel-label">Download PDFs</div>
+      <div class="dl-list" id="dlList"></div>
+      <button class="btn btn-gold" style="width:100%;" id="downloadAllBtn" onclick="downloadAllPDFs()">
+        ⬇ Download All PDFs
+      </button>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="preview-panel">
+    <div class="preview-header">
+      <span class="preview-customer-label" id="previewLabel"></span>
+      <button class="btn btn-gold btn-sm" id="downloadCurrentBtn" onclick="downloadCurrentPDF()">⬇ Download PDF</button>
+    </div>
+    <div id="formPreview">
+      <div class="empty-state">Add a customer and paste their train data to generate a form.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATIONS ──────────────────────────────────────────────────────────────
+const STATIONS = {
+  'Tokyo':'東京','Shinagawa':'品川','Shinjuku':'新宿','Kyoto':'京都','Osaka':'大阪',
+  'Shin-Osaka':'新大阪','Namba(Nankai Line)':'難波（南海線）','Namba':'難波',
+  'Tennoji (osaka)':'天王寺','Tennoji':'天王寺',
+  'Yokohama':'横浜','Kamakura':'鎌倉','Odawara':'小田原','Hakone-Yumoto':'箱根湯本',
+  'Hakone':'箱根','Atami':'熱海','Ito':'伊東','Shimoda':'下田','Nikko':'日光',
+  'Tobu-Nikko':'東武日光','Utsunomiya':'宇都宮','Karuizawa':'軽井沢','Takao (Tokyo)':'高尾',
+  'Narita':'成田','Narita Airport Terminal 1(Railroad)':'成田空港第１ターミナル',
+  'Narita Airport Terminal 2 3':'成田空港第２・３ターミナル',
+  'Haneda Airport Terminal 3(Monorail)':'羽田空港第３ターミナル（モノレール）',
+  'Haneda Airport Terminal 3(Keikyu)':'羽田空港第３ターミナル（京急）',
+  'Nagoya':'名古屋','Gifu':'岐阜','Takayama':'高山','Matsumoto':'松本','Nagano':'長野',
+  'Kofu':'甲府','Otsuki':'大月','Kawaguchiko':'河口湖','Narai':'奈良井',
+  'Nakatsugawa':'中津川','Nagiso':'南木曽','Echizen-Takefu':'越前武生','Tsuruga':'敦賀',
+  'Toyama':'富山','Maibara':'米原',
+  'Nara':'奈良','Kintetsu-Nara':'近鉄奈良','Kanazawa':'金沢','Kobe(Hyogo)':'神戸',
+  'Kobe':'神戸','Shin-kobe':'新神戸','Hikone':'彦根','Amanohashidate':'天橋立',
+  'Kinosakionsen':'城崎温泉','Fukuchiyama':'福知山','Kansai Airport(Osaka)':'関西空港',
+  'Wakayama':'和歌山','Hashimoto':'橋本','Koyasan':'高野山','Iseshi':'伊勢市',
+  'Kiitanabe':'紀伊田辺','Kiikatsuura':'紀伊勝浦','Taki':'多気',
+  'Hiroshima':'広島','Hiroshima Airport':'広島空港','Miyajimaguchi':'宮島口',
+  'Fukuyama':'福山','Kurashiki':'倉敷','Okayama':'岡山','Himeji':'姫路',
+  'Uno':'宇野','Teshima Port':'豊島港','Imabari':'今治','Matsuyama':'松山',
+  'Hakata':'博多','Fukuoka':'福岡','Kokura':'小倉','Chayamachi':'茶屋町',
+  'Shin-Tosu':'新鳥栖','Takeo Onsen':'武雄温泉','Nagasaki(Nagasaki)':'長崎',
+  'Kumamoto':'熊本','Beppu':'別府','Usuki':'臼杵','Kagoshima':'鹿児島','Ibusuki':'指宿',
+  'sendai':'仙台','Sendai':'仙台',
+  'Sapporo(Hakodate Line)':'札幌（函館本線）','Sapporo':'札幌',
+  'Shin-sapporo(Chitose Line)':'新札幌（千歳線）','Hakodate':'函館',
+  'Kakunodate':'角館','Tsurui':'鶴居',
+};
+const toJP = name => STATIONS[name] || name;
+const isUnknown = name => !STATIONS[name];
+
+// ── SESSION STATE ─────────────────────────────────────────────────────────
+const STORAGE_KEY = 'cocolo_jr_v2';
+let customers = [];
+let activeId  = null;
+
+const newCustomer = () => ({ id: Date.now() + Math.random(), name: '', trains: [] });
+const getActive   = () => customers.find(c => c.id === activeId) || null;
+
+function saveSession() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ customers, activeId })); } catch(e) {}
+}
+function loadSession() {
+  try {
+    const d = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+    if (d && d.customers && d.customers.length) { customers = d.customers; activeId = d.activeId || customers[0].id; return true; }
+  } catch(e) {}
+  return false;
+}
+
+// ── CUSTOMER MANAGEMENT ───────────────────────────────────────────────────
+function addCustomer() {
+  const c = newCustomer();
+  customers.push(c);
+  activeId = c.id;
+  saveSession();
+  renderAll();
+  document.getElementById('customerName').focus();
+}
+
+function selectCustomer(id) {
+  activeId = id;
+  saveSession();
+  renderAll();
+}
+
+function onNameChange() {
+  const c = getActive(); if (!c) return;
+  c.name = document.getElementById('customerName').value;
+  saveSession();
+  renderTabs(); renderDownloadList(); renderPreviewLabel(); renderForm();
+}
+
+function clearCurrentCustomer() {
+  const c = getActive(); if (!c) return;
+  c.trains = [];
+  document.getElementById('pasteInput').value = '';
+  document.getElementById('status').className = 'status';
+  saveSession();
+  renderTrainList(); renderForm(); renderTabs(); renderDownloadList();
+}
+
+function clearSession() {
+  if (!confirm('Clear all customers from this session?')) return;
+  customers = []; activeId = null; saveSession(); addCustomer();
+}
+
+// ── PARSE ─────────────────────────────────────────────────────────────────
+function parseInput() {
+  const c = getActive(); if (!c) return;
+  const raw = document.getElementById('pasteInput').value.trim();
+  if (!raw) { showStatus('Please paste train data first.', 'err'); return; }
+
+  const RE = /Jour\s+\d+\s+(\d{4}-(\d{2})-(\d{2}))\s+Depart\s+de\s+(.+?)\s+à\s+(\d{1,2}:\d{2})\s+Arrivée\s+à\s+(\d{1,2}:\d{2})\s+à\s+(.+)/;
+  let errors = 0;
+  const parsed = raw.split('\n').map(l => l.trim()).filter(Boolean).reduce((acc, line) => {
+    const m = line.match(RE);
+    if (!m) { errors++; return acc; }
+    const [,, month, day, fromRaw, dep, arr, toRaw] = m;
+    acc.push({ date:`${+month}月${+day}日`, fromRaw:fromRaw.trim(), toRaw:toRaw.trim(), from:toJP(fromRaw.trim()), to:toJP(toRaw.trim()), dep, arr, train:'' });
+    return acc;
+  }, []);
+
+  if (!parsed.length) { showStatus('No valid train lines found. Check the format.', 'err'); return; }
+
+  c.trains = parsed;
+  const unknowns = [...new Set(parsed.flatMap(t => [t.fromRaw, t.toRaw].filter(isUnknown)))];
+  if (unknowns.length) {
+    showStatus(`⚠ ${parsed.length} leg${parsed.length>1?'s':''} parsed — unrecognized station${unknowns.length>1?'s':''}: ${unknowns.join(', ')}`, 'warn');
+  } else {
+    showStatus(`${parsed.length} leg${parsed.length>1?'s':''} parsed successfully.${errors?' ('+errors+' skipped)':''}`, 'ok');
+  }
+
+  saveSession(); renderTrainList(); renderForm(); renderTabs(); renderDownloadList();
+}
+
+function removeTrain(i) {
+  const c = getActive(); if (!c) return;
+  c.trains.splice(i, 1);
+  saveSession(); renderTrainList(); renderForm(); renderTabs(); renderDownloadList();
+}
+
+// ── RENDER UI ─────────────────────────────────────────────────────────────
+function renderAll() {
+  renderTabs(); renderPanelBody(); renderTrainList();
+  renderForm(); renderDownloadList(); renderPreviewLabel();
+  document.getElementById('sessionBadge').textContent =
+    `${customers.length} customer${customers.length !== 1 ? 's' : ''}`;
+}
+
+function renderTabs() {
+  document.getElementById('customerTabs').innerHTML =
+    customers.map(c => {
+      const label = c.name || 'New customer';
+      const warn  = c.trains.some(t => isUnknown(t.fromRaw) || isUnknown(t.toRaw));
+      return `<button class="customer-tab${c.id===activeId?' active':''}"
+        onclick="selectCustomer(${c.id})" title="${esc(label)}">
+        ${warn?'<span class="warn-dot"></span>':''}${esc(label)}</button>`;
+    }).join('') +
+    `<button class="tab-add" onclick="addCustomer()" title="Add customer">＋</button>`;
+}
+
+function renderPanelBody() {
+  const c = getActive();
+  document.getElementById('customerName').value = c ? c.name : '';
+  document.getElementById('pasteInput').value   = '';
+  document.getElementById('status').className   = 'status';
+}
+
+function renderTrainList() {
+  const c       = getActive();
+  const section = document.getElementById('trainListSection');
+  if (!c || !c.trains.length) { section.style.display = 'none'; return; }
+
+  document.getElementById('trainCount').textContent = `(${c.trains.length})`;
+  document.getElementById('trainList').innerHTML = c.trains.map((t, i) => {
+    const wF = isUnknown(t.fromRaw), wT = isUnknown(t.toRaw);
+    const warnMsg = [wF&&`"${t.fromRaw}"`, wT&&`"${t.toRaw}"`].filter(Boolean).join(', ') + ' not in station list';
+    return `<div class="train-card${wF||wT?' has-warning':''}">
+      <div style="flex:1;">
+        <div class="route">${wF||wT?'⚠ ':''}${esc(t.from)} → ${esc(t.to)}</div>
+        <div class="t-date">${t.date}</div>
+        ${wF||wT?`<div class="warn-label">${esc(warnMsg)}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        <div class="t-times">${t.dep} → ${t.arr}</div>
+        <button class="btn btn-outline-red btn-sm" onclick="removeTrain(${i})" style="padding:1px 8px;font-size:0.7rem;">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+  section.style.display = 'block';
+}
+
+function renderPreviewLabel() {
+  const c = getActive();
+  document.getElementById('previewLabel').textContent = c && c.name ? c.name : '';
+}
+
+function renderDownloadList() {
+  document.getElementById('dlList').innerHTML = customers.map(c => {
+    const name = c.name || '(unnamed)';
+    const warn = c.trains.some(t => isUnknown(t.fromRaw) || isUnknown(t.toRaw));
+    return `<div class="dl-row">
+      <span class="dl-name">${esc(name)}</span>
+      <span class="dl-legs">${c.trains.length} leg${c.trains.length!==1?'s':''}</span>
+      ${warn?'<span class="dl-warn">⚠</span>':''}
+      <button class="btn btn-ghost btn-sm" style="padding:2px 9px;flex-shrink:0;"
+        onclick="downloadPDFById(${c.id},event)">PDF</button>
+    </div>`;
+  }).join('');
+}
+
+// ── RENDER FORM HTML ──────────────────────────────────────────────────────
+function buildFormHTML(c) {
+  if (!c || !c.trains.length) return null;
+  const rows = c.trains.map((t, i) => {
+    const bg   = i%2===0 ? '#ffffff' : '#f7f7f7';
+    const noBg = i%2===0 ? '#efefef' : '#e8e8e8';
+    const C    = `text-align:center;vertical-align:middle;border:1px solid #bbb;background:${bg};padding:9px 6px;`;
+    const warnF = isUnknown(t.fromRaw) ? 'color:#b8860b;' : '';
+    const warnT = isUnknown(t.toRaw)   ? 'color:#b8860b;' : '';
+    return `<tr>
+      <td style="text-align:center;vertical-align:middle;border:1px solid #bbb;background:${noBg};font-size:15px;font-weight:600;padding:9px 4px;">${i+1}</td>
+      <td style="${C}font-size:16px;">${t.date}</td>
+      <td style="${C}font-size:15px;">${esc(t.train)}</td>
+      <td style="${C}"><div style="font-size:16px;font-weight:600;${warnF}">${esc(t.from)}</div><div style="font-size:13px;font-weight:600;color:#1a2744;margin-top:4px;">${t.dep}</div></td>
+      <td style="${C}font-size:18px;">～</td>
+      <td style="${C}"><div style="font-size:16px;font-weight:600;${warnT}">${esc(t.to)}</div><div style="font-size:13px;font-weight:600;color:#1a2744;margin-top:4px;">${t.arr}</div></td>
+      <td style="${C}"></td>
+      <td style="${C}"></td>
+    </tr>`;
+  }).join('');
+
+  return `
+    <table class="meta-table" style="margin-bottom:0;">
+      <tr>
+        <td class="lbl" style="width:130px;">お客様名義：</td>
+        <td class="val">${esc(c.name)}</td>
+        <td rowspan="2" style="text-align:right;font-size:10px;white-space:nowrap;padding:3px 6px;line-height:2;">
+          ※ 英語表記のチケット<br>※ 全て指定席希望</td>
+      </tr>
+      <tr><td class="lbl">領収証会社名：</td><td>ここロトラベル合同会社</td></tr>
+    </table>
+    <div class="form-title">ORDER FORM FOR SEAT RESERVATION</div>
+    <table class="col-table">
+      <thead>
+        <tr>
+          <th style="width:28px;" rowspan="2">No.</th>
+          <th>ご乗車日</th><th>列車名</th><th colspan="3">区間</th><th>大人</th><th>こども</th>
+        </tr>
+        <tr>
+          <th class="sub">BOARDING DATE</th><th class="sub">TRAIN NAME AND NUMBER</th>
+          <th class="sub" style="width:22%;">FROM</th>
+          <th class="sub" style="width:6%;font-size:12px;">～</th>
+          <th class="sub" style="width:22%;">TO</th>
+          <th class="sub">ADULT</th><th class="sub">CHILD</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <table class="footer-table" style="border-top:none;">
+      <tr><td class="lbl">合計金額：</td><td></td></tr>
+    </table>`;
+}
+
+function renderForm() {
+  const c    = getActive();
+  const html = c ? buildFormHTML(c) : null;
+  document.getElementById('formPreview').innerHTML = html ||
+    `<div class="empty-state">Paste train data and click <strong>Parse trains</strong> to generate the form.</div>`;
+}
+
+// ── PDF ───────────────────────────────────────────────────────────────────
+function buildFilename(c) {
+  const name = (c.name || 'customer').replace(/\s+/g, '_');
+  if (!c.trains.length) return `JR_${name}.pdf`;
+  // Extract month/day numbers from date strings like "5月9日"
+  const nums = c.trains.map(t => {
+    const m = t.date.match(/(\d+)月(\d+)日/);
+    return m ? `${String(m[1]).padStart(2,'0')}${String(m[2]).padStart(2,'0')}` : '';
+  }).filter(Boolean).sort();
+  const range = nums.length > 1 && nums[0] !== nums[nums.length-1]
+    ? `${nums[0]}_${nums[nums.length-1]}` : nums[0] || '';
+  return `JR_${name}${range?'_'+range:''}.pdf`;
+}
+
+async function renderCanvas(c) {
+  const tmp = document.createElement('div');
+  tmp.style.cssText = 'position:fixed;left:-9999px;top:0;width:780px;padding:22px 24px;background:white;font-family:"MS PGothic","ＭＳ Ｐゴシック","Hiragino Kaku Gothic Pro",Meiryo,Arial,sans-serif;';
+  const s = document.createElement('style');
+  s.textContent = `.meta-table{width:100%;border-collapse:collapse;font-size:12px;}.meta-table td{border:1px solid #000;padding:4px 6px;}.meta-table .lbl{font-weight:normal;white-space:nowrap;}.meta-table .val{min-width:200px;}.form-title{text-align:center;font-size:16px;font-weight:bold;padding:6px 5px;background:#d0d0d0;border:2px solid #000;border-top:none;letter-spacing:.05em;}.col-table{width:100%;border-collapse:collapse;border:2px solid #000;}.col-table th,.col-table td{border:1px solid #bbb;}.col-table thead th{text-align:center;padding:5px 4px;font-weight:bold;font-size:13px;background:#d0d0d0;border:1px solid #999;}.col-table thead th.sub{font-weight:normal;background:#e8e8e8;font-size:11px;padding:4px;}.footer-table{width:100%;border-collapse:collapse;font-size:12px;}.footer-table td{border:1px solid #000;padding:4px 6px;}.footer-table .lbl{white-space:nowrap;width:140px;}`;
+  const d = document.createElement('div');
+  d.innerHTML = buildFormHTML(c);
+  tmp.appendChild(s); tmp.appendChild(d);
+  document.body.appendChild(tmp);
+  const canvas = await html2canvas(tmp, { scale:2, useCORS:true, backgroundColor:'#ffffff', logging:false });
+  document.body.removeChild(tmp);
+  return canvas;
+}
+
+function savePDF(canvas, filename) {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const mg = 10, pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
+  const uw = pw-mg*2, uh = ph-mg*2, r = canvas.width/canvas.height;
+  let dw = uw, dh = dw/r;
+  if (dh > uh) { dh = uh; dw = dh*r; }
+  pdf.addImage(canvas.toDataURL('image/png'), 'PNG', mg+(uw-dw)/2, mg, dw, dh);
+  pdf.save(filename);
+}
+
+async function downloadCurrentPDF() {
+  const c = getActive();
+  if (!c || !c.trains.length) { showStatus('No train data to download.', 'err'); return; }
+  const btn = document.getElementById('downloadCurrentBtn');
+  btn.textContent = '⏳...'; btn.disabled = true;
+  try { savePDF(await renderCanvas(c), buildFilename(c)); }
+  catch(e) { showStatus('PDF failed: '+e.message,'err'); }
+  finally { btn.textContent = '⬇ Download PDF'; btn.disabled = false; }
+}
+
+async function downloadPDFById(id, evt) {
+  const c = customers.find(x => x.id === id);
+  if (!c || !c.trains.length) { showStatus('No train data for this customer.', 'err'); return; }
+  const btn = evt.target;
+  btn.textContent = '...'; btn.disabled = true;
+  try { savePDF(await renderCanvas(c), buildFilename(c)); }
+  catch(e) { showStatus('PDF failed: '+e.message,'err'); }
+  finally { btn.textContent = 'PDF'; btn.disabled = false; }
+}
+
+async function downloadAllPDFs() {
+  const list = customers.filter(c => c.trains.length > 0);
+  if (!list.length) { showStatus('No customers have train data yet.', 'err'); return; }
+  const btn = document.getElementById('downloadAllBtn');
+  btn.disabled = true;
+  try {
+    for (let i = 0; i < list.length; i++) {
+      btn.textContent = `⏳ ${i+1} / ${list.length}...`;
+      savePDF(await renderCanvas(list[i]), buildFilename(list[i]));
+      if (i < list.length-1) await new Promise(r => setTimeout(r, 450));
+    }
+  } catch(e) { showStatus('PDF failed: '+e.message,'err'); }
+  finally { btn.textContent = '⬇ Download All PDFs'; btn.disabled = false; }
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────
+function showStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg; el.className = `status ${type}`;
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+if (!loadSession()) { addCustomer(); } else { renderAll(); }
+</script>
+</body>
+</html>
