@@ -255,8 +255,10 @@
       <div class="panel-section">
         <div class="panel-label">Train Data — paste from system</div>
         <textarea class="paste-area" id="pasteInput" rows="6"
-          placeholder="Jour 6 2026-05-09 Depart de Shinjuku à 09:30 Arrivée à 11:28 à Kawaguchiko
-Jour 7 2026-05-10 Depart de Kawaguchiko à 08:23 Arrivée à 09:10 à Otsuki
+          placeholder="Jour 6 2026-04-27 Depart de Tokyo à 09:27 Arrivée à 10:00 à Odawara avec JR sur Kodama 813
+Jour 6 2026-04-27 Depart de Odawara à 10:07 Arrivée à 10:22 à Hakone-Yumoto avec Tozan
+Jour 7 2026-04-28 Depart de Hakone-Yumoto à 09:24 Arrivée à 09:38 à Odawara avec Tozan
+Jour 7 2026-04-28 Depart de Odawara à 10:11 Arrivée à 12:12 à Kyoto avec JR sur Hikari 637
 ..."></textarea>
         <div style="margin-top:0.5rem;display:flex;gap:0.4rem;">
           <button class="btn btn-primary btn-sm" onclick="parseInput()">▶ Parse trains</button>
@@ -265,8 +267,9 @@ Jour 7 2026-05-10 Depart de Kawaguchiko à 08:23 Arrivée à 09:10 à Otsuki
       </div>
 
       <div class="format-box">
-        Each line: <code>Jour N YYYY-MM-DD Depart de [Station] à HH:MM Arrivée à HH:MM à [Station]</code>
-        <div class="format-example">Jour 6 2026-05-09 Depart de Shinjuku à 09:30 Arrivée à 11:28 à Kawaguchiko</div>
+        Each line: <code>Jour N YYYY-MM-DD Depart de [Station] à HH:MM Arrivée à HH:MM à [Station] avec [Line] sur [Train]</code><br>
+        <span style="font-size:0.7rem;color:var(--muted);">The <code>avec … sur …</code> part is optional. Non-JR legs are filtered out automatically.</span>
+        <div class="format-example">Jour 6 2026-04-27 Depart de Tokyo à 09:27 Arrivée à 10:00 à Odawara avec JR sur Kodama 813</div>
       </div>
 
       <div class="status" id="status"></div>
@@ -400,24 +403,30 @@ function parseInput() {
   const raw = document.getElementById('pasteInput').value.trim();
   if (!raw) { showStatus('Please paste train data first.', 'err'); return; }
 
-  const RE = /Jour\s+\d+\s+(\d{4}-(\d{2})-(\d{2}))\s+Depart\s+de\s+(.+?)\s+à\s+(\d{1,2}:\d{2})\s+Arrivée\s+à\s+(\d{1,2}:\d{2})\s+à\s+(.+)/;
-  let errors = 0;
+  const RE = /Jour\s+\d+\s+(\d{4}-(\d{2})-(\d{2}))\s+Depart\s+de\s+(.+?)\s+à\s+(\d{1,2}:\d{2})\s+Arrivée\s+à\s+(\d{1,2}:\d{2})\s+à\s+(.+?)(?:\s+avec\s+(\S+)(?:\s+sur\s+(.+))?)?$/;
+  let errors = 0, filtered = 0;
   const parsed = raw.split('\n').map(l => l.trim()).filter(Boolean).reduce((acc, line) => {
     const m = line.match(RE);
     if (!m) { errors++; return acc; }
-    const [,, month, day, fromRaw, dep, arr, toRaw] = m;
-    acc.push({ date:`${+month}月${+day}日`, fromRaw:fromRaw.trim(), toRaw:toRaw.trim(), from:toJP(fromRaw.trim()), to:toJP(toRaw.trim()), dep, arr, train:'' });
+    const [,, month, day, fromRaw, dep, arr, toRaw, trainLine, trainName] = m;
+    if (trainLine && trainLine !== 'JR') { filtered++; return acc; }
+    acc.push({ date:`${+month}月${+day}日`, fromRaw:fromRaw.trim(), toRaw:toRaw.trim(), from:toJP(fromRaw.trim()), to:toJP(toRaw.trim()), dep, arr, train: trainName ? trainName.trim() : '' });
     return acc;
   }, []);
 
-  if (!parsed.length) { showStatus('No valid train lines found. Check the format.', 'err'); return; }
+  if (!parsed.length) {
+    showStatus(filtered ? `No JR legs found — ${filtered} non-JR leg${filtered>1?'s':''} filtered out.` : 'No valid train lines found. Check the format.', 'err');
+    return;
+  }
 
   c.trains = parsed;
   const unknowns = [...new Set(parsed.flatMap(t => [t.fromRaw, t.toRaw].filter(isUnknown)))];
+  const filterNote = filtered ? ` · ${filtered} non-JR filtered` : '';
+  const skipNote   = errors   ? ` · ${errors} skipped` : '';
   if (unknowns.length) {
-    showStatus(`⚠ ${parsed.length} leg${parsed.length>1?'s':''} parsed — unrecognized station${unknowns.length>1?'s':''}: ${unknowns.join(', ')}`, 'warn');
+    showStatus(`⚠ ${parsed.length} leg${parsed.length>1?'s':''} parsed — unrecognized station${unknowns.length>1?'s':''}: ${unknowns.join(', ')}${filterNote}${skipNote}`, 'warn');
   } else {
-    showStatus(`${parsed.length} leg${parsed.length>1?'s':''} parsed successfully.${errors?' ('+errors+' skipped)':''}`, 'ok');
+    showStatus(`${parsed.length} leg${parsed.length>1?'s':''} parsed successfully.${filterNote}${skipNote}`, 'ok');
   }
 
   saveSession(); renderTrainList(); renderForm(); renderTabs(); renderDownloadList();
@@ -528,7 +537,7 @@ function buildFormHTML(c) {
         <td rowspan="2" style="text-align:right;font-size:10px;white-space:nowrap;padding:3px 6px;line-height:2;">
           ※ 英語表記のチケット<br>※ 全て指定席希望</td>
       </tr>
-      <tr><td class="lbl">領収証会社名：</td><td>ここロトラベル合同会社</td></tr>
+      <tr><td class="lbl">領収証会社名：</td><td>ココロトラベル合同会社</td></tr>
     </table>
     <div class="form-title">ORDER FORM FOR SEAT RESERVATION</div>
     <table class="col-table">

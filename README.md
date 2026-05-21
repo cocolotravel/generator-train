@@ -24,15 +24,25 @@ A browser-based tool for [Cocolo Travel](https://cocolo-travel.com) to generate 
 Each line must follow this pattern:
 
 ```text
-Jour N YYYY-MM-DD Depart de [Station] à HH:MM Arrivée à HH:MM à [Station]
+Jour N YYYY-MM-DD Depart de [Station] à HH:MM Arrivée à HH:MM à [Station] avec [Line] sur [Train]
 ```
+
+The `avec [Line] sur [Train]` suffix is optional. When present:
+
+- Lines marked `avec JR` are kept; the train name/number (e.g. `Kodama 813`) is written into the **TRAIN NAME AND NUMBER** column.
+- Lines with any other operator (e.g. `avec Tozan`) are filtered out — this form covers JR tickets only.
+- Lines with no `avec` suffix are always included with the train column left blank.
 
 Example:
 
 ```text
-Jour 6 2026-05-09 Depart de Shinjuku à 09:30 Arrivée à 11:28 à Kawaguchiko
-Jour 7 2026-05-10 Depart de Kawaguchiko à 08:23 Arrivée à 09:10 à Otsuki
+Jour 6 2026-04-27 Depart de Tokyo à 09:27 Arrivée à 10:00 à Odawara avec JR sur Kodama 813
+Jour 6 2026-04-27 Depart de Odawara à 10:07 Arrivée à 10:22 à Hakone-Yumoto avec Tozan
+Jour 7 2026-04-28 Depart de Hakone-Yumoto à 09:24 Arrivée à 09:38 à Odawara avec Tozan
+Jour 7 2026-04-28 Depart de Odawara à 10:11 Arrivée à 12:12 à Kyoto avec JR sur Hikari 637
 ```
+
+In the example above, the two `avec Tozan` legs are filtered out and only the two JR legs appear in the form.
 
 Stations not found in the built-in list are flagged with a warning but still included in the form.
 
