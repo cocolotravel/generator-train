@@ -3,44 +3,60 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cocolo Travel — JR Ticket Order Form</title>
+<title>COCOLO Travel — JR Ticket Order Form</title>
+<link rel="icon" type="image/svg+xml" href="assets/logos/full-sumi.svg">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+  @font-face {
+    font-family: "Roslindale Variable";
+    src: url("https://assets.cocolotravel.com/fonts/RoslindaleVariable[opsz,slnt,wdth,wght].woff2") format("woff2-variations");
+    font-weight: 200 900;
+    font-stretch: 75% 125%;
+    font-display: swap;
+  }
 
   :root {
-    --navy: #1a2744;
-    --navy-light: #243357;
-    --gold: #c9a84c;
-    --gold-light: #e8c97a;
-    --cream: #faf8f3;
-    --border: #ddd8cc;
-    --text: #2a2a2a;
-    --muted: #888;
+    /* COCOLO brand tokens */
+    --color-brand-washi: #FFFEF5;
+    --color-brand-millennium-washi: #F7F5DA;
+    --color-brand-kodama: #8A9A82;
+    --color-brand-sumi: #1B3848;
+    --color-brand-kin: #FFC916;
+    --color-sumi-60: rgba(27, 56, 72, 0.6);
+
+    --color-background-primary: var(--color-brand-washi);
+    --color-background-secondary: var(--color-brand-millennium-washi);
+    --color-text-primary: var(--color-brand-sumi);
+    --color-text-support: var(--color-brand-kodama);
+    --color-border-default: var(--color-brand-washi);
+    --color-border-subtle: color-mix(in srgb, var(--color-brand-sumi) 18%, transparent);
+
+    --font-style-roslindale: "Roslindale Variable", Georgia, serif;
+    --font-style-inter: "Inter", sans-serif;
+
+    /* Utility (non-brand) status colors */
     --red: #c0392b;
-    --warn-bg: #fff8e6;
-    --warn-border: #f0c060;
+    --warn-bg: #fdf6e3;
+    --warn-border: color-mix(in srgb, var(--color-brand-kin) 55%, var(--color-brand-kodama));
     --warn-text: #7a5000;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; }
+  body { font-family: var(--font-style-inter); background: var(--color-background-secondary); color: var(--color-text-primary); min-height: 100vh; }
 
   /* ── Header ── */
   .header {
-    background: var(--navy); padding: 1.1rem 2rem;
+    background: var(--color-brand-sumi); padding: 1.1rem 2rem;
     display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 3px solid var(--gold);
+    border-bottom: 3px solid var(--color-brand-kin);
   }
   .header-brand { display: flex; align-items: center; gap: 0.75rem; }
-  .header-logo {
-    width: 36px; height: 36px; background: var(--gold); border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1rem; font-weight: 700; color: var(--navy);
-  }
-  .header-title { color: white; font-size: 1rem; font-weight: 500; }
-  .header-sub { color: var(--gold-light); font-size: 0.72rem; margin-top: 1px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .header-logo { width: 34px; height: 34px; display: block; }
+  .header-title { font-family: var(--font-style-roslindale); color: white; font-size: 1.05rem; font-weight: 600; letter-spacing: 0.01em; }
+  .header-sub { color: color-mix(in srgb, var(--color-brand-kin) 60%, white); font-size: 0.72rem; margin-top: 1px; letter-spacing: 0.05em; text-transform: uppercase; }
   .header-right { display: flex; align-items: center; gap: 0.75rem; }
   .session-badge {
     background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
@@ -59,65 +75,65 @@
 
   /* ── Left panel ── */
   .panel {
-    background: white; border-right: 1px solid var(--border);
+    background: white; border-right: 1px solid var(--color-border-subtle);
     display: flex; flex-direction: column;
     max-height: calc(100vh - 65px); position: sticky; top: 0; overflow: hidden;
   }
 
   /* ── Customer tabs ── */
   .customer-tabs {
-    border-bottom: 2px solid var(--border); background: #f5f5f5;
+    border-bottom: 2px solid var(--color-border-subtle); background: var(--color-background-secondary);
     padding: 0.5rem 0.75rem 0; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 2px;
     flex-shrink: 0;
   }
   .customer-tab {
     padding: 0.35rem 0.8rem; font-size: 0.76rem; cursor: pointer;
     border: 1px solid transparent; border-bottom: none; border-radius: 6px 6px 0 0;
-    background: none; font-family: inherit; color: var(--muted);
+    background: none; font-family: inherit; color: var(--color-sumi-60);
     transition: all 0.15s; white-space: nowrap;
     max-width: 130px; overflow: hidden; text-overflow: ellipsis;
     display: inline-flex; align-items: center; gap: 5px;
   }
-  .customer-tab:hover { background: white; color: var(--text); }
+  .customer-tab:hover { background: white; color: var(--color-text-primary); }
   .customer-tab.active {
-    background: white; color: var(--navy); font-weight: 600;
-    border-color: var(--border); border-bottom-color: white;
+    background: white; color: var(--color-brand-sumi); font-weight: 600;
+    border-color: var(--color-border-subtle); border-bottom-color: white;
     margin-bottom: -2px; padding-bottom: 0.5rem;
   }
   .warn-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warn-border); flex-shrink: 0; display: inline-block; }
   .tab-add {
     padding: 0.35rem 0.65rem; font-size: 1rem; cursor: pointer;
-    background: none; border: 1px dashed var(--border); border-bottom: none;
-    border-radius: 6px 6px 0 0; color: var(--muted); font-family: inherit;
+    background: none; border: 1px dashed var(--color-border-subtle); border-bottom: none;
+    border-radius: 6px 6px 0 0; color: var(--color-sumi-60); font-family: inherit;
     transition: all 0.15s;
   }
-  .tab-add:hover { color: var(--navy); border-color: var(--gold); background: #fffbf0; }
+  .tab-add:hover { color: var(--color-brand-sumi); border-color: var(--color-brand-kin); background: color-mix(in srgb, var(--color-brand-kin) 8%, white); }
 
   /* ── Panel body ── */
   .panel-body { padding: 1.25rem 1.5rem; flex: 1; overflow-y: auto; min-height: 0; }
   .panel-section { margin-bottom: 1.3rem; }
   .panel-label {
     font-size: 0.67rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--muted); margin-bottom: 0.6rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border);
+    color: var(--color-sumi-60); margin-bottom: 0.6rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--color-border-subtle);
   }
 
   /* ── Fields ── */
   .field { margin-bottom: 0.8rem; }
-  .field label { display: block; font-size: 0.77rem; font-weight: 500; margin-bottom: 0.28rem; color: var(--navy); }
+  .field label { display: block; font-size: 0.77rem; font-weight: 500; margin-bottom: 0.28rem; color: var(--color-brand-sumi); }
   .field input {
     width: 100%; padding: 0.48rem 0.75rem;
-    border: 1px solid var(--border); border-radius: 7px;
-    font-size: 0.85rem; font-family: inherit; background: var(--cream); transition: border-color 0.15s;
+    border: 1px solid var(--color-border-subtle); border-radius: 7px;
+    font-size: 0.85rem; font-family: inherit; background: var(--color-background-secondary); transition: border-color 0.15s;
   }
-  .field input:focus { outline: none; border-color: var(--gold); background: white; }
+  .field input:focus { outline: none; border-color: var(--color-brand-kin); background: white; }
 
   /* ── Paste area ── */
   .paste-area {
-    width: 100%; padding: 0.55rem 0.75rem; border: 1px solid var(--border); border-radius: 7px;
-    font-size: 0.73rem; font-family: 'DM Mono', monospace;
-    resize: vertical; min-height: 85px; background: var(--cream); transition: border-color 0.15s;
+    width: 100%; padding: 0.55rem 0.75rem; border: 1px solid var(--color-border-subtle); border-radius: 7px;
+    font-size: 0.73rem; font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+    resize: vertical; min-height: 85px; background: var(--color-background-secondary); transition: border-color 0.15s;
   }
-  .paste-area:focus { outline: none; border-color: var(--gold); background: white; }
+  .paste-area:focus { outline: none; border-color: var(--color-brand-kin); background: white; }
 
   /* ── Buttons ── */
   .btn {
@@ -125,27 +141,27 @@
     padding: 0.48rem 0.95rem; border: none; border-radius: 7px;
     font-family: inherit; font-size: 0.82rem; font-weight: 500; cursor: pointer; transition: all 0.15s;
   }
-  .btn-primary { background: var(--navy); color: white; }
-  .btn-primary:hover { background: var(--navy-light); }
-  .btn-gold { background: var(--gold); color: var(--navy); font-weight: 600; }
-  .btn-gold:hover { background: var(--gold-light); }
+  .btn-primary { background: var(--color-brand-sumi); color: white; }
+  .btn-primary:hover { background: color-mix(in srgb, var(--color-brand-sumi) 88%, white); }
+  .btn-gold { background: var(--color-brand-kin); color: var(--color-brand-sumi); font-weight: 600; }
+  .btn-gold:hover { background: color-mix(in srgb, var(--color-brand-kin) 60%, white); }
   .btn-sm { padding: 0.32rem 0.7rem; font-size: 0.75rem; }
-  .btn-ghost { background: #f0f0f0; color: var(--text); border: none; }
-  .btn-ghost:hover { background: #e4e4e4; }
+  .btn-ghost { background: color-mix(in srgb, var(--color-brand-sumi) 6%, white); color: var(--color-text-primary); border: none; }
+  .btn-ghost:hover { background: color-mix(in srgb, var(--color-brand-sumi) 12%, white); }
   .btn-outline-red { background: none; border: 1px solid #e0a0a0; color: var(--red); }
   .btn-outline-red:hover { background: #fce8e6; }
 
   /* ── Train cards ── */
   .train-list { display: flex; flex-direction: column; gap: 0.4rem; }
   .train-card {
-    background: var(--cream); border: 1px solid var(--border);
+    background: var(--color-background-secondary); border: 1px solid var(--color-border-subtle);
     border-radius: 8px; padding: 0.5rem 0.65rem;
     font-size: 0.77rem; display: flex; align-items: center; gap: 6px;
   }
   .train-card.has-warning { border-color: var(--warn-border); background: var(--warn-bg); }
-  .train-card .route { font-weight: 600; color: var(--navy); }
-  .train-card .t-date { color: var(--muted); font-size: 0.71rem; }
-  .train-card .t-times { color: var(--gold); font-family: 'DM Mono', monospace; font-size: 0.71rem; }
+  .train-card .route { font-weight: 600; color: var(--color-brand-sumi); }
+  .train-card .t-date { color: var(--color-sumi-60); font-size: 0.71rem; }
+  .train-card .t-times { color: var(--color-brand-kin); font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace; font-size: 0.71rem; }
   .train-card .warn-label { font-size: 0.69rem; color: var(--warn-text); margin-top: 2px; }
 
   /* ── Status ── */
@@ -156,43 +172,43 @@
 
   /* ── Format hint ── */
   .format-box {
-    background: #f0f4ff; border: 1px solid #c5d0f0; border-radius: 8px;
-    padding: 0.7rem 0.9rem; font-size: 0.74rem; line-height: 1.6; color: #3a4a7a;
+    background: var(--color-background-secondary); border: 1px solid color-mix(in srgb, var(--color-brand-kodama) 45%, transparent); border-radius: 8px;
+    padding: 0.7rem 0.9rem; font-size: 0.74rem; line-height: 1.6; color: var(--color-brand-sumi);
     margin-bottom: 1.2rem;
   }
-  .format-box code { font-family: 'DM Mono', monospace; background: #dde5ff; padding: 0 3px; border-radius: 3px; font-size: 0.7rem; }
+  .format-box code { font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace; background: color-mix(in srgb, var(--color-brand-kodama) 25%, white); padding: 0 3px; border-radius: 3px; font-size: 0.7rem; }
   .format-example {
-    margin-top: 0.45rem; font-family: 'DM Mono', monospace; font-size: 0.67rem;
-    background: white; border: 1px solid #c5d0f0; border-radius: 5px;
-    padding: 0.35rem 0.6rem; line-height: 1.8; color: #2a3a6a;
+    margin-top: 0.45rem; font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace; font-size: 0.67rem;
+    background: white; border: 1px solid color-mix(in srgb, var(--color-brand-kodama) 45%, transparent); border-radius: 5px;
+    padding: 0.35rem 0.6rem; line-height: 1.8; color: var(--color-brand-sumi);
   }
 
   /* ── Download all ── */
   .download-section {
     flex-shrink: 0; padding: 1rem 1.5rem;
-    border-top: 2px solid var(--border); background: #f8f8f8;
+    border-top: 2px solid var(--color-border-subtle); background: color-mix(in srgb, var(--color-brand-sumi) 3%, white);
   }
   .download-section .panel-label { margin-bottom: 0.5rem; }
   .dl-list { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.65rem; max-height: 140px; overflow-y: auto; }
   .dl-row {
     display: flex; align-items: center; gap: 0.5rem;
     font-size: 0.76rem; padding: 0.3rem 0.55rem;
-    background: white; border: 1px solid var(--border); border-radius: 6px;
+    background: white; border: 1px solid var(--color-border-subtle); border-radius: 6px;
   }
-  .dl-row .dl-name { flex: 1; font-weight: 500; color: var(--navy); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .dl-row .dl-legs { color: var(--muted); font-size: 0.7rem; white-space: nowrap; }
+  .dl-row .dl-name { flex: 1; font-weight: 500; color: var(--color-brand-sumi); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dl-row .dl-legs { color: var(--color-sumi-60); font-size: 0.7rem; white-space: nowrap; }
   .dl-row .dl-warn { color: var(--warn-text); font-size: 0.7rem; }
 
   /* ── Right panel ── */
   .preview-panel {
-    padding: 2rem; overflow-y: auto; background: #e8e4dc;
+    padding: 2rem; overflow-y: auto; background: color-mix(in srgb, var(--color-brand-kodama) 20%, var(--color-brand-washi));
     display: flex; flex-direction: column; align-items: center;
   }
   .preview-header {
     display: flex; gap: 0.75rem; margin-bottom: 1.5rem;
     width: 100%; max-width: 780px; justify-content: space-between; align-items: center;
   }
-  .preview-customer-label { font-size: 0.85rem; color: var(--navy); font-weight: 600; }
+  .preview-customer-label { font-family: var(--font-style-roslindale); font-size: 0.95rem; color: var(--color-brand-sumi); font-weight: 600; }
 
   /* ── Form ── */
   #formPreview {
@@ -215,7 +231,7 @@
   .footer-table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .footer-table td { border: 1px solid #000; padding: 4px 6px; }
   .footer-table .lbl { white-space: nowrap; width: 140px; }
-  .empty-state { color: var(--muted); text-align: center; padding: 3rem 2rem; font-size: 0.85rem; }
+  .empty-state { color: var(--color-sumi-60); text-align: center; padding: 3rem 2rem; font-size: 0.85rem; }
 
   @media print { .header, .main > .panel, .preview-header { display: none !important; } }
 </style>
@@ -224,10 +240,10 @@
 
 <div class="header">
   <div class="header-brand">
-    <div class="header-logo">CT</div>
+    <img class="header-logo" src="assets/logos/full-washi.svg" alt="COCOLO">
     <div>
       <div class="header-title">JR Ticket Order Form Generator</div>
-      <div class="header-sub">Cocolo Travel 合同会社</div>
+      <div class="header-sub">COCOLO Travel 合同会社</div>
     </div>
   </div>
   <div class="header-right">
@@ -268,7 +284,7 @@ Jour 7 2026-04-28 Depart de Odawara à 10:11 Arrivée à 12:12 à Kyoto avec JR 
 
       <div class="format-box">
         Each line: <code>Jour N YYYY-MM-DD Depart de [Station] à HH:MM Arrivée à HH:MM à [Station] avec [Line] sur [Train]</code><br>
-        <span style="font-size:0.7rem;color:var(--muted);">The <code>avec … sur …</code> part is optional. Non-JR legs are filtered out automatically.</span>
+        <span style="font-size:0.7rem;color:var(--color-sumi-60);">The <code>avec … sur …</code> part is optional. Non-JR legs are filtered out automatically.</span>
         <div class="format-example">Jour 6 2026-04-27 Depart de Tokyo à 09:27 Arrivée à 10:00 à Odawara avec JR sur Kodama 813</div>
       </div>
 
@@ -276,7 +292,7 @@ Jour 7 2026-04-28 Depart de Odawara à 10:11 Arrivée à 12:12 à Kyoto avec JR 
 
       <div id="trainListSection" style="display:none;">
         <div class="panel-label">
-          Parsed Trains <span id="trainCount" style="color:var(--gold);font-weight:600;"></span>
+          Parsed Trains <span id="trainCount" style="color:var(--color-brand-kin);font-weight:600;"></span>
         </div>
         <div class="train-list" id="trainList"></div>
       </div>

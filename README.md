@@ -1,6 +1,8 @@
 # JR Ticket Order Form Generator
 
-A browser-based tool for [Cocolo Travel](https://cocolo-travel.com) to generate JR seat reservation order forms (PDF) for multiple customers in one session.
+A browser-based tool for [COCOLO Travel](https://cocolo-travel.com) to generate JR seat reservation order forms (PDF) for multiple customers in one session.
+
+The UI follows the COCOLO Travel design system — Washi/Millennium Washi surfaces, Sumi text, a Kin accent, Roslindale for the title, Inter for the interface — while the generated order form itself keeps the plain black-and-white layout expected by JR staff.
 
 ## Features
 
@@ -52,6 +54,8 @@ Stations not found in the built-in list are flagged with a warning but still inc
 | --- | --- | --- |
 | [jsPDF](https://github.com/parallax/jsPDF) | 2.5.1 | PDF generation |
 | [html2canvas](https://html2canvas.hertzen.com) | 1.4.1 | Form rendering to canvas |
+
+Fonts (Inter from Google Fonts, Roslindale from `assets.cocolotravel.com`) and the COCOLO cloud logo (bundled under `assets/logos/`) are the only brand-specific assets — everything else is self-contained in `index.html`.
 
 ## Browser support
 
