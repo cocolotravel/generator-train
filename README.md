@@ -55,7 +55,7 @@ Stations not found in the built-in list are flagged with a warning but still inc
 | [jsPDF](https://github.com/parallax/jsPDF) | 2.5.1 | PDF generation |
 | [html2canvas](https://html2canvas.hertzen.com) | 1.4.1 | Form rendering to canvas |
 
-Fonts (Inter from Google Fonts, Roslindale from `assets.cocolotravel.com`) and the COCOLO cloud logo (bundled under `assets/logos/`) are the only brand-specific assets — everything else is self-contained in `index.html`.
+Fonts (Inter from Google Fonts, Roslindale from `assets.cocolotravel.com`) and the COCOLO cloud logo (also served from `assets.cocolotravel.com`, the brand's single source of truth) are the only brand-specific assets — everything else is self-contained in `index.html`. An internet connection is required for these plus the PDF libraries above.
 
 ## Browser support
 
